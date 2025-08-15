@@ -128,4 +128,24 @@ def initKnightAttacks():
 def initKingAttacks():
     for sq in range(64):
         kingAttacks.append(maskKingAttacks(sq))
+
+# sets relevant occupancy squares for rooks and bishops
+def setOccupancy(index: int, bitsInMask: int, attackMask):
+    # occupancy map
+    occupancy = np.uint64(0)
+
+    # loop over range of bits in attack mask
+    for count in range(bitsInMask):
+        # get LSB index of attack mask
+        sq = getLsbIndex(attackMask)
+
+        # pop the LSB in attack mask
+        attackMask = popBit(attackMask, sq)
+
+        # make sure the occupancy is on the board
+        if index & (np.uint64(1) << count):
+            # populate the occupancy map
+            occupancy = occupancy | (np.uint64(1) << sq)
+
+    return occupancy
             

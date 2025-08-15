@@ -17,6 +17,16 @@ a8, b8, c8, d8, e8, f8, g8, h8 = \
 42, 43, 44, 45, 46, 47, 48, 49, \
 50, 51, 52, 53, 54, 55, 56, 57, \
 58, 59, 60, 61, 62, 63
+
+squareToCoords = ["a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", \
+"a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", \
+"a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3", \
+"a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", \
+"a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5", \
+"a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", \
+"a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", \
+"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"]
+
 '''
 a-file             0x0101010101010101
 h-file             0x8080808080808080
@@ -91,6 +101,9 @@ class Board():
         self.bQ_bitboard | \
         self.bK_bitboard
 
+def sq64tobb(sq64):
+    return np.uint64(1) << sq64
+
 def printbb(bb):
     myStr = str(format(bb, '064b'))
     for rank in range(8):
@@ -141,8 +154,4 @@ def getLsbIndex(bb):
         return -1
 
 
-def sq64tobb(sq64):
-    return np.uint64(1) << sq64
-
-    
     
