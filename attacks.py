@@ -9,6 +9,22 @@ knightAttacks = []
 # King attacks table
 kingAttacks = []
 
+# bishop attack masks
+bishopMasks = [0 for _ in range(64)]
+
+# rook attack masks
+rookMasks = [0 for _ in range(64)]
+
+# bishop attacks table [square][occupancies]
+rows = 64
+columns = 512
+bishopAttacks = [[0 for _ in range(columns)] for _ in range(rows)] 
+
+# rook attacks table [[square], [occupancies]]
+rows = 64
+columns = 4096
+rookAttacks = [[0 for _ in range(columns)] for _ in range(rows)] 
+
 rookMagicNumbers = [0x8a80104000800020,
     0x140002000100040,
     0x2801880a0017001,
@@ -279,6 +295,54 @@ def initKingAttacks():
     for sq in range(64):
         kingAttacks.append(maskKingAttacks(sq))
 
+def initSliderAttacks(bishop: int):
+
+    #initialize rook and bishop masks
+    for sq in range(64):
+        bishopMasks[sq] = maskBishopAttacks(sq)
+        rookMasks[sq] = maskRookAttacks(sq)
+        if bishop:
+            attackMask = bishopMasks[sq]
+        else:
+            attackMask = rookMasks[sq]
+
+        relevantBits = attackMask.bit_count()
+        occupancyIndices = np.uint64(1) << relevantBits
+
+        for i in range(occupancyIndices):
+            if bishop:
+                # initialize current occupancy variation
+                occupancy = setOccupancy(i, relevantBits, attackMask)
+                # initialize magic index
+                magicIndex = (occupancy * bishopMagicNumbers[sq]) >> (64 - bishopRelevantBits[sq])
+                # initialize bishop attacks
+                bishopAttacks[sq][magicIndex] = otfBishopAttacks(sq, occupancy)
+            else:
+                # initialize current occupancy variation
+                occupancy = setOccupancy(i, relevantBits, attackMask)
+                # initialize magic index
+                magicIndex = (occupancy * rookMagicNumbers[sq]) >> (64 - rookRelevantBits[sq])
+                # initialize rook attacks
+                rookAttacks[sq][magicIndex] = otfRookAttacks(sq, occupancy)
+
+# get bishop attacks
+def getBishopAttacks(sq, occupancy):
+    # get bishop attacks assuming current board occupancy
+    occupancy &= bishopMasks[sq]
+    occupancy *= bishopMagicNumbers[sq]
+    occupancy = occupancy >> (64 - bishopRelevantBits[sq])
+
+    return bishopAttacks[sq][occupancy]
+
+# get rook attacks
+def getRookAttacks(sq, occupancy):
+    # get rook attacks assuming current board occupancy
+    occupancy &= rookMasks[sq]
+    occupancy *= rookMagicNumbers[sq]
+    occupancy = occupancy >> (64 - rookRelevantBits[sq])
+    
+    return rookAttacks[sq][occupancy]
+
 # sets relevant occupancy squares for rooks and bishops
 def setOccupancy(index: int, bitsInMask: int, attackMask):
     # occupancy map
@@ -302,3 +366,5 @@ def setOccupancy(index: int, bitsInMask: int, attackMask):
 # initialize all variables
 def initAll():
     initPawnAttacks()
+    initSliderAttacks(bishop)
+    initSliderAttacks(rook)
