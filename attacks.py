@@ -296,30 +296,32 @@ def initKingAttacks():
         kingAttacks.append(maskKingAttacks(sq))
 
 def initSliderAttacks(bishop: int):
-
-    #initialize rook and bishop masks
     for sq in range(64):
+        # filling out the attack mask lists for rook and bishop
         bishopMasks[sq] = maskBishopAttacks(sq)
         rookMasks[sq] = maskRookAttacks(sq)
+        # setting the relevant attack mask
         if bishop:
             attackMask = bishopMasks[sq]
         else:
             attackMask = rookMasks[sq]
 
-        relevantBits = attackMask.bit_count()
-        occupancyIndices = np.uint64(1) << relevantBits
+        relevantBitsCount = attackMask.bit_count()
+
+        # occupancy indices is the number of possible combinations of blocker configurations
+        occupancyIndices = np.uint64(1) << relevantBitsCount
 
         for i in range(occupancyIndices):
             if bishop:
                 # initialize current occupancy variation
-                occupancy = setOccupancy(i, relevantBits, attackMask)
+                occupancy = setOccupancy(i, relevantBitsCount, attackMask)
                 # initialize magic index
                 magicIndex = (occupancy * bishopMagicNumbers[sq]) >> (64 - bishopRelevantBits[sq])
                 # initialize bishop attacks
                 bishopAttacks[sq][magicIndex] = otfBishopAttacks(sq, occupancy)
             else:
                 # initialize current occupancy variation
-                occupancy = setOccupancy(i, relevantBits, attackMask)
+                occupancy = setOccupancy(i, relevantBitsCount, attackMask)
                 # initialize magic index
                 magicIndex = (occupancy * rookMagicNumbers[sq]) >> (64 - rookRelevantBits[sq])
                 # initialize rook attacks

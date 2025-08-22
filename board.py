@@ -1,6 +1,15 @@
 import numpy as np
-white, black = 0, 1
+white, black, both = 0, 1, 2
 rook, bishop = 0, 1
+wk, wq, bk, bq = 1, 2, 4, 8
+P, N, B, R, Q, K, p, n, b, r, q, k = 0,1,2,3,4,5,6,7,8,9,10,11
+asciiPieces = "PNBRQKpnbrqk"
+unicodePieces = ["\u265F", "\u265E", "\u265D", "\u265C", "\u265B", "\u265A", \
+                 "\u2659", "\u2658", "\u2657", "\u2656", "\u2655", "\u2654"]
+
+# Convert ascii character pieces to constants
+charPieces = {"P":P, "N":N, "B":B, "R":R, "Q":Q, "K":K, \
+              "p":p, "n":n, "b":b, "r":r, "q":q, "k":k}
 
 a1, b1, c1, d1, e1, f1, g1, h1, \
 a2, b2, c2, d2, e2, f2, g2, h2, \
@@ -9,7 +18,7 @@ a4, b4, c4, d4, e4, f4, g4, h4, \
 a5, b5, c5, d5, e5, f5, g5, h5, \
 a6, b6, c6, d6, e6, f6, g6, h6, \
 a7, b7, c7, d7, e7, f7, g7, h7, \
-a8, b8, c8, d8, e8, f8, g8, h8 = \
+a8, b8, c8, d8, e8, f8, g8, h8, noSq = \
 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, \
 10, 11, 12, 13, 14, 15, 16, 17, \
 18, 19, 20, 21, 22, 23, 24, 25, \
@@ -17,7 +26,7 @@ a8, b8, c8, d8, e8, f8, g8, h8 = \
 34, 35, 36, 37, 38, 39, 40, 41, \
 42, 43, 44, 45, 46, 47, 48, 49, \
 50, 51, 52, 53, 54, 55, 56, 57, \
-58, 59, 60, 61, 62, 63
+58, 59, 60, 61, 62, 63, 64
 
 squareToCoords = ["a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", \
 "a2", "b2", "c2", "d2", "e2", "f2", "g2", "h2", \
@@ -26,7 +35,7 @@ squareToCoords = ["a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", \
 "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5", \
 "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", \
 "a7", "b7", "c7", "d7", "e7", "f7", "g7", "h7", \
-"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8"]
+"a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8", "no_sq"]
 
 '''
 a-file             0x0101010101010101
@@ -58,7 +67,7 @@ class Board():
         self.bQ_bitboard = np.uint64(0)
         self.bK_bitboard = np.uint64(0)
 
-        self.init_pieces()
+        self.initPieces()
 
         self.bitboards = [self.wP_bitboard, 
                           self.wN_bitboard,
@@ -72,8 +81,11 @@ class Board():
                           self.bR_bitboard,
                           self.bQ_bitboard,
                           self.bK_bitboard]
+        self.side = white
+        self.enPas = noSq
+        self.castle = wk |wq | bk | bq
 
-    def init_pieces(self): #Sets the starting state of the board
+    def initPieces(self): #Sets the starting state of the board
         self.wP_bitboard = 0x000000000000FF00
         self.wN_bitboard = sq64tobb(b1) | sq64tobb(g1)
         self.wB_bitboard = sq64tobb(c1) | sq64tobb(f1)
@@ -88,7 +100,7 @@ class Board():
         self.bQ_bitboard = sq64tobb(d8)
         self.bK_bitboard = sq64tobb(e8)
 
-    def get_occupied_squares(self):
+    def getOccupiedSquares(self):
         return self.wP_bitboard | \
         self.wN_bitboard | \
         self.wB_bitboard | \
@@ -113,6 +125,34 @@ def printbb(bb):
             print(" " + myStr[rank*8 + file] + " ", end = '')
         print()
     print("   a  b  c  d  e  f  g  h")
+    print()
+
+def printBoard(board):
+    print()
+    for rank in range(8):
+        for file in range(7,-1,-1):
+            if file == 7:
+                print(8 - rank, end = "")
+
+            sq = 63 - (8*rank + file)
+            piece = -1
+            for i in range(12):
+                if testBit(board.bitboards[i], sq):
+                    piece = i
+            if piece == -1:
+                print("  .", end = "")
+            else:
+                print("  " + unicodePieces[piece], end = "")
+        print()
+    print("   a  b  c  d  e  f  g  h")
+    print()
+    if board.side == 0:
+        print("Side: White   ", end = "")
+    elif board.side == 1:
+        print("Side: Black", end = "")
+    print("EnPas: " + str(squareToCoords[board.enPas]), end = "  ")
+    print("Castling: " + ("K" if board.castle & wk else "-") + ("Q" if board.castle & wq else "-") \
+          + ("k" if board.castle & bk else "-") + ("q" if board.castle & bq else "-"))
     print()
 
 def shiftN(bb):
